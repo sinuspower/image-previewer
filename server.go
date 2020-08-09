@@ -35,7 +35,7 @@ func (s *Server) ListenAndServe() error {
 
 		<-done
 		if err := s.server.Shutdown(context.Background()); err != nil {
-			log.Printf("HTTP server Shutdown: %v", err)
+			log.Printf("Server shutdown error: %v", err)
 		}
 		close(idleConnsClosed)
 	}()
