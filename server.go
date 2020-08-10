@@ -24,7 +24,26 @@ type Server struct {
 	server    *http.Server
 }
 
-var ErrListenAndServe = errors.New("error starting or closing listener")
+var (
+	ErrListenAndServe  = errors.New("error starting or closing listener")
+	ErrCreateCutter    = errors.New("error during cutter creation")
+	ErrCanNotLoadImage = errors.New("can not load image from server")
+	ErrCanNotCutImage  = errors.New("can not cut image")
+)
+
+func NewServer(port uint16, cacheSize uint16, logOutput io.Writer) ProxyServer {
+	http.HandleFunc("/fill/", fillHandler)
+	log.SetOutput(logOutput)
+
+	return &Server{
+		port:      port,
+		cacheSize: cacheSize,
+		logOutput: logOutput,
+		server: &http.Server{
+			Addr: ":" + strconv.Itoa(int(port)),
+		},
+	}
+}
 
 func (s *Server) ListenAndServe() error {
 	idleConnsClosed := make(chan struct{})
@@ -53,29 +72,28 @@ func (s *Server) ListenAndServe() error {
 	return nil
 }
 
-func NewServer(port uint16, cacheSize uint16, logOutput io.Writer) ProxyServer {
-	http.HandleFunc("/fill/", fillHandler)
-	log.SetOutput(logOutput)
-
-	return &Server{
-		port:      port,
-		cacheSize: cacheSize,
-		logOutput: logOutput,
-		server: &http.Server{
-			Addr: ":" + strconv.Itoa(int(port)),
-		},
-	}
-}
-
 func fillHandler(w http.ResponseWriter, r *http.Request) {
 	fromHost := r.RemoteAddr
 	path := r.URL.Path
 
 	log.Printf("Get request from %s; path: %s", fromHost, path)
 
-	rsBody := []byte("Response body\n")
+	cutter, err := NewCutter(path)
+	if err != nil {
+		log.Printf("%s: %s", ErrCreateCutter, err)
+	}
 
-	written, err := w.Write(rsBody)
+	image, err := cutter.LoadImage()
+	if err != nil {
+		log.Printf("%s: %s", ErrCanNotLoadImage, err)
+	}
+
+	image, err = cutter.Cut(image)
+	if err != nil {
+		log.Printf("%s: %s", ErrCanNotCutImage, err)
+	}
+
+	written, err := w.Write(image)
 	if err != nil {
 		log.Printf("Error sending response to %s: %s", fromHost, err)
 	}
