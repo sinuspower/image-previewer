@@ -22,7 +22,10 @@ type Cutter struct {
 	client *http.Client
 }
 
-var ErrCanNotParsePath = errors.New("can not parse path")
+var (
+	ErrCanNotParsePath    = errors.New("can not parse path")
+	ErrWrongFileExtension = errors.New("file extension must be jpg or jpeg")
+)
 
 func NewCutter(path string) (ImageCutter, error) {
 	width, height, url, err := parsePath(path)
@@ -39,7 +42,7 @@ func NewCutter(path string) (ImageCutter, error) {
 }
 
 func (c *Cutter) LoadImage() ([]byte, error) {
-	rq, err := http.NewRequestWithContext(context.Background(), "GET", "http://"+c.url, nil)
+	rq, err := http.NewRequestWithContext(context.Background(), "GET", c.url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +85,13 @@ func parsePath(path string) (uint16, uint16, string, error) {
 	}
 
 	url := parts[4]
+	if !strings.HasPrefix(url, "http://") {
+		url = "http://" + url
+	}
+
+	if !strings.HasSuffix(url, "jpg") && !strings.HasSuffix(url, "jpeg") {
+		return 0, 0, "", ErrWrongFileExtension
+	}
 
 	return uint16(width), uint16(height), url, nil
 }

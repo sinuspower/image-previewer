@@ -30,6 +30,7 @@ func main() {
 		}()
 	*/
 	// log.SetOutput(logFile)
+	// server := NewServer(uint16(port), uint16(cacheSize), logFile)
 	//-------------------------------------------
 
 	server := NewServer(uint16(port), uint16(cacheSize), os.Stdout)
