@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"image"
+	"image/jpeg"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/disintegration/imaging"
 )
 
 type ImageCutter interface {
@@ -16,16 +21,13 @@ type ImageCutter interface {
 }
 
 type Cutter struct {
-	width  uint16
-	height uint16
+	width  int
+	height int
 	url    string
 	client *http.Client
 }
 
-var (
-	ErrCanNotParsePath    = errors.New("can not parse path")
-	ErrWrongFileExtension = errors.New("file extension must be jpg or jpeg")
-)
+var ErrCanNotParsePath = errors.New("can not parse path")
 
 func NewCutter(path string) (ImageCutter, error) {
 	width, height, url, err := parsePath(path)
@@ -62,36 +64,86 @@ func (c *Cutter) LoadImage() ([]byte, error) {
 }
 
 func (c *Cutter) Cut(source []byte) ([]byte, error) {
-	return source, nil
+	image, _, err := image.Decode(bytes.NewReader(source))
+	if err != nil {
+		return nil, err
+	}
+
+	preview := imaging.Fill(image, c.width, c.height, imaging.Center, imaging.Lanczos)
+	buffer := new(bytes.Buffer)
+	err = jpeg.Encode(buffer, preview, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer.Bytes(), nil
 }
 
 // parsePath returns width, height and URL from input string like /fill/300/200/{URL}.
-func parsePath(path string) (uint16, uint16, string, error) {
+func parsePath(path string) (int, int, string, error) {
 	parts := strings.SplitN(path, "/", 5)
 
 	if len(parts) < 5 {
 		return 0, 0, "", fmt.Errorf("%s: %w", ErrCanNotParsePath,
-			errors.New("missing expected elements"))
+			errors.New("missing expected elements in URL"))
 	}
 
-	width, err := strconv.ParseUint(parts[2], 10, 16)
+	width, err := getWidth(parts[2])
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("%s: %w", ErrCanNotParsePath, err)
 	}
 
-	height, err := strconv.ParseUint(parts[3], 10, 16)
+	height, err := getHeight(parts[3])
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("%s: %w", ErrCanNotParsePath, err)
 	}
 
-	url := parts[4]
-	if !strings.HasPrefix(url, "http://") {
-		url = "http://" + url
+	url, err := getURL(parts[4])
+	if err != nil {
+		return 0, 0, "", fmt.Errorf("%s: %w", ErrCanNotParsePath, err)
 	}
 
-	if !strings.HasSuffix(url, "jpg") && !strings.HasSuffix(url, "jpeg") {
-		return 0, 0, "", ErrWrongFileExtension
+	return width, height, url, nil
+}
+
+func getWidth(source string) (int, error) {
+	width, err := strconv.Atoi(source)
+	if err != nil {
+		return 0, errors.New("can not get width")
 	}
 
-	return uint16(width), uint16(height), url, nil
+	min := settings.GetMinWidth()
+	max := settings.GetMaxWidth()
+	if width < min || width > max {
+		return 0, fmt.Errorf("width value must be in range [%d, %d]", min, max)
+	}
+
+	return width, nil
+}
+
+func getHeight(source string) (int, error) {
+	height, err := strconv.Atoi(source)
+	if err != nil {
+		return 0, errors.New("can not get height")
+	}
+
+	min := settings.GetMinHeight()
+	max := settings.GetMaxHeight()
+	if height < min || height > max {
+		return 0, fmt.Errorf("height value must be in range [%d, %d]", min, max)
+	}
+
+	return height, nil
+}
+
+func getURL(source string) (string, error) {
+	if !strings.HasSuffix(source, "jpg") && !strings.HasSuffix(source, "jpeg") {
+		return "", errors.New("file extension must be jpg or jpeg")
+	}
+
+	if !strings.HasPrefix(source, "http://") {
+		source = "http://" + source
+	}
+
+	return source, nil
 }

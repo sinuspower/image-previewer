@@ -18,20 +18,21 @@ type ProxyServer interface {
 }
 
 type Server struct {
-	port      uint16
-	cacheSize uint16
+	port      int
+	cacheSize int
 	logOutput io.Writer
 	server    *http.Server
 }
 
 var (
 	ErrListenAndServe  = errors.New("error starting or closing listener")
+	ErrWritingResponse = errors.New("error writing response to client")
 	ErrCreateCutter    = errors.New("error during cutter creation")
 	ErrCanNotLoadImage = errors.New("can not load image from server")
 	ErrCanNotCutImage  = errors.New("can not cut image")
 )
 
-func NewServer(port uint16, cacheSize uint16, logOutput io.Writer) ProxyServer {
+func NewServer(port int, cacheSize int, logOutput io.Writer) ProxyServer {
 	http.HandleFunc("/fill/", fillHandler)
 	log.SetOutput(logOutput)
 
@@ -40,7 +41,7 @@ func NewServer(port uint16, cacheSize uint16, logOutput io.Writer) ProxyServer {
 		cacheSize: cacheSize,
 		logOutput: logOutput,
 		server: &http.Server{
-			Addr: ":" + strconv.Itoa(int(port)),
+			Addr: ":" + strconv.Itoa(port),
 		},
 	}
 }
@@ -75,27 +76,49 @@ func (s *Server) ListenAndServe() error {
 func fillHandler(w http.ResponseWriter, r *http.Request) {
 	fromHost := r.RemoteAddr
 	path := r.URL.Path
+	var e error
 
 	log.Printf("Get request from %s; path: %s", fromHost, path)
 
 	cutter, err := NewCutter(path)
 	if err != nil {
-		log.Printf("%s: %s", ErrCreateCutter, err)
+		e = fmt.Errorf("%s: %w", ErrCreateCutter, err)
+		sendResponse(w, 400, fromHost, nil, e)
+
+		return
 	}
 
 	image, err := cutter.LoadImage()
 	if err != nil {
-		log.Printf("%s: %s", ErrCanNotLoadImage, err)
+		e = fmt.Errorf("%s: %w", ErrCanNotLoadImage, err)
+		sendResponse(w, 500, fromHost, nil, e)
+
+		return
 	}
 
 	image, err = cutter.Cut(image)
 	if err != nil {
-		log.Printf("%s: %s", ErrCanNotCutImage, err)
+		e = fmt.Errorf("%s: %w", ErrCanNotCutImage, err)
+		sendResponse(w, 500, fromHost, nil, e)
+
+		return
 	}
 
-	written, err := w.Write(image)
+	sendResponse(w, 200, fromHost, image, nil)
+}
+
+func sendResponse(w http.ResponseWriter, status int, toHost string, data []byte, err error) {
+	w.WriteHeader(status)
 	if err != nil {
-		log.Printf("Error sending response to %s: %s", fromHost, err)
+		log.Println(err)
+		data = []byte(err.Error() + "\n")
 	}
-	log.Printf("Send response to %s, %d bytes", fromHost, written)
+
+	written, err := w.Write(data)
+	if err != nil {
+		log.Println(fmt.Errorf("%s: %w", ErrWritingResponse, err))
+		return //nolint:go-lint
+	}
+
+	log.Printf("Send response to %s, %d bytes, status %d", toHost, written, status)
 }
