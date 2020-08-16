@@ -16,6 +16,11 @@ func main() {
 	}
 
 	now := time.Now().Format("2006-01-02_15:04:05")
+	if _, err := os.Stat("logs"); os.IsNotExist(err) {
+		if err := os.Mkdir("logs", 0700); err != nil {
+			log.Fatal(err)
+		}
+	}
 	logFile, err := os.Create("logs/" + now + "_image-previewer_log.txt")
 	if err != nil {
 		log.Fatal(err)
