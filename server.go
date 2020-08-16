@@ -117,7 +117,8 @@ func sendResponse(w http.ResponseWriter, status int, toHost string, data []byte,
 	written, err := w.Write(data)
 	if err != nil {
 		log.Println(fmt.Errorf("%s: %w", ErrWritingResponse, err))
-		return //nolint:go-lint
+
+		return
 	}
 
 	log.Printf("Send response to %s, %d bytes, status %d", toHost, written, status)
