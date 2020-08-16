@@ -47,6 +47,7 @@ jobs:
     - stage: "Tests"
       name: "Makefile"
       install: go mod download
+      install: go install github.com/golangci/golangci-lint/cmd/golangci-lint
       script:
         - make lint
         - make test
