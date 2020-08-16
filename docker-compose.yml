@@ -1,14 +1,14 @@
 version: "3.3"
 services:
     image-previewer:
-        image: sinuspower/image-previewer:0.1
+        image: sinuspower/image-previewer:0.6
         container_name: image-previewer
         volumes:
             - /var/image-previewer/logs:/root/logs
         ports:
             - "${IMAGE_PREVIEWER_PORT}:${IMAGE_PREVIEWER_PORT}"
         environment:
-            - IMAGE_PREVIEWER_PORT=8080
+            - IMAGE_PREVIEWER_PORT=${IMAGE_PREVIEWER_PORT}
             - IMAGE_PREVIEWER_CACHE_SIZE=20
             - IMAGE_PREVIEWER_MIN_WIDTH=50
             - IMAGE_PREVIEWER_MIN_HEIGHT=50

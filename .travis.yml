@@ -38,10 +38,16 @@ jobs:
       name: "Linters"
       install: go install github.com/golangci/golangci-lint/cmd/golangci-lint
       script: golangci-lint run ./...
-      if: |
-        (type = push AND branch != hw12_13_14_15_calendar) OR \
-        (type = pull_request AND head_branch != hw12_13_14_15_calendar)
+
     - stage: "Tests"
       name: "Unit tests"
       install: go mod download
       script: go test -v -count=1 -race -gcflags=-l -timeout=30s ./...
+
+    - stage: "Tests"
+      name: "Makefile"
+      install: go mod download
+      script:
+        - make lint
+        - make test
+        - make build

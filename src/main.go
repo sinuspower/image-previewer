@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -21,7 +22,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	logFile, err := os.Create("logs/" + now + "_image-previewer_log.txt")
+	logFile, err := os.Create("logs/" + now + "_" +
+		strconv.Itoa(settings.GetPort()) + "_image-previewer_log.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
