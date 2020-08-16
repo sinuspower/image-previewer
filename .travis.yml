@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - "1.15"
+  - "1.14"
 
 os:
   - linux
@@ -18,28 +18,30 @@ env:
   global:
     - GO111MODULE=on
     - GOPROXY=https://proxy.golang.org
-    - BRANCH="master"
+    - BRANCH="${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}"
 
 before_install:
-    - echo "current branch is ${BRANCH}"
-    - ls ${BRANCH} && cd ${BRANCH}
+  - echo "current branch is ${BRANCH}"
+  - ls ${BRANCH} && cd ${BRANCH}
 
 stages:
-    - name: Tests
-      
-jobs:
-    include:
-        - stage: "Tests"
-        name: "go get"
-        install: echo "skip"
-        script: cd /tmp && go get "github.com/${TRAVIS_REPO_SLUG}/${BRANCH}@${BRANCH}"
-      
-        - stage: "Tests"
-        name: "Linters"
-        install: go install github.com/golangci/golangci-lint/cmd/golangci-lint
-        script: golangci-lint run ./...
+  - name: Tests
 
-        - stage: "Tests"
-        name: "Unit tests"
-        install: go mod download
-        script: go test -v -count=1 -race -gcflags=-l -timeout=30s ./...
+jobs:
+  include:
+    - stage: "Tests"
+      name: "go get"
+      install: echo "skip"
+      script: cd /tmp && go get "github.com/${TRAVIS_REPO_SLUG}/${BRANCH}@${BRANCH}"
+
+    - stage: "Tests"
+      name: "Linters"
+      install: go install github.com/golangci/golangci-lint/cmd/golangci-lint
+      script: golangci-lint run ./...
+      if: |
+        (type = push AND branch != hw12_13_14_15_calendar) OR \
+        (type = pull_request AND head_branch != hw12_13_14_15_calendar)
+    - stage: "Tests"
+      name: "Unit tests"
+      install: go mod download
+      script: go test -v -count=1 -race -gcflags=-l -timeout=30s ./...
