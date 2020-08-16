@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - "1.14"
+  - "1.15"
 
 os:
   - linux
@@ -22,7 +22,6 @@ env:
 
 before_install:
   - echo "current branch is ${BRANCH}"
-  - ls ${BRANCH} && cd ${BRANCH}
 
 stages:
   - name: Tests
