@@ -3,7 +3,7 @@ ifneq (,$(wildcard ./.env))
 endif
 
 build:
-	go build -a -installsuffix cgo -o bin/image-previewer ./...
+	go build -o bin/image-previewer .
 
 run:
 	./bin/image-previewer
