@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/jpeg"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,12 +50,14 @@ func (c *Cutter) LoadImage() ([]byte, error) {
 		return nil, err
 	}
 
+	log.Println("[INFO] send request to", c.url)
 	rs, err := c.client.Do(rq)
 	if err != nil {
 		return nil, err
 	}
 	defer rs.Body.Close()
 
+	log.Println("[INFO] get response from", c.url)
 	bytes, err := ioutil.ReadAll(rs.Body)
 	if err != nil {
 		return nil, err

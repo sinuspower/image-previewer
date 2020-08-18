@@ -55,12 +55,12 @@ func (s *Server) ListenAndServe() error {
 
 		<-done
 		if err := s.server.Shutdown(context.Background()); err != nil {
-			log.Printf("Server shutdown error: %v", err)
+			log.Printf("[ERROR] server shutdown error: %v", err)
 		}
 		close(idleConnsClosed)
 	}()
 
-	log.Printf("Listening on port %d; cache size: %d images", s.port, s.cacheSize)
+	log.Printf("[INFO] listening on port %d; cache size: %d images", s.port, s.cacheSize)
 	fmt.Fprintln(s.logOutput)
 	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
 		return fmt.Errorf("%s: %w", ErrListenAndServe, err)
@@ -68,7 +68,13 @@ func (s *Server) ListenAndServe() error {
 
 	<-idleConnsClosed
 	fmt.Fprintln(s.logOutput)
-	log.Println("Server stopped")
+	log.Println("[INFO] server stopped")
+	err := cache.Clear()
+	if err != nil {
+		log.Println("[WARN] can not clear cache")
+	} else {
+		log.Println("[INFO] cache cleared")
+	}
 
 	return nil
 }
@@ -78,7 +84,7 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	var e error
 
-	log.Printf("Get request from %s; path: %s", fromHost, path)
+	log.Printf("[INFO] get request from %s; path: %s", fromHost, path)
 
 	cutter, err := NewCutter(path)
 	if err != nil {
@@ -88,7 +94,20 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image, err := cutter.LoadImage()
+	// response from cache
+	image, ok, err := cache.GetFile(path)
+	if err != nil {
+		log.Println("[WARN] can not get cache:", err)
+	}
+	if ok {
+		log.Println("[INFO] get image from cache")
+		sendResponse(w, 200, fromHost, image, nil)
+
+		return
+	}
+	// --------------------------
+
+	image, err = cutter.LoadImage()
 	if err != nil {
 		e = fmt.Errorf("%s: %w", ErrCanNotLoadImage, err)
 		sendResponse(w, 500, fromHost, nil, e)
@@ -104,22 +123,29 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = cache.PutFile(path, image)
+	if err != nil {
+		log.Println("[WARN] can not write cache:", err)
+	} else {
+		log.Println("[INFO] put image into cache")
+	}
+
 	sendResponse(w, 200, fromHost, image, nil)
 }
 
 func sendResponse(w http.ResponseWriter, status int, toHost string, data []byte, err error) {
 	w.WriteHeader(status)
 	if err != nil {
-		log.Println(err)
+		log.Println("[ERROR]", err)
 		data = []byte(err.Error() + "\n")
 	}
 
 	written, err := w.Write(data)
 	if err != nil {
-		log.Println(fmt.Errorf("%s: %w", ErrWritingResponse, err))
+		log.Println("[ERROR]", fmt.Errorf("%s: %w", ErrWritingResponse, err))
 
 		return
 	}
 
-	log.Printf("Send response to %s, %d bytes, status %d", toHost, written, status)
+	log.Printf("[INFO] send response to %s, %d bytes, status %d", toHost, written, status)
 }

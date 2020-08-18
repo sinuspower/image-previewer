@@ -5,15 +5,26 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	internal_cache "github.com/sinuspower/image-previewer/internal/cache"
+	internal_settings "github.com/sinuspower/image-previewer/internal/settings"
 )
 
-var settings *Settings
+var (
+	settings *internal_settings.Settings
+	cache    internal_cache.Cache
+)
 
 func main() {
-	settings = new(Settings)
+	settings = new(internal_settings.Settings)
 	err := settings.ParseEnv()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	cache, err = internal_cache.NewCache(settings.GetCacheSize(), "cache")
+	if err != nil {
+		log.Fatal("can not create cache:", err)
 	}
 
 	now := time.Now().Format("2006-01-02_15:04:05")
@@ -35,6 +46,7 @@ func main() {
 	log.SetOutput(logFile)
 
 	server := NewServer(settings.GetPort(), settings.GetCacheSize(), logFile)
+
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}

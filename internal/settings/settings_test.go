@@ -1,4 +1,4 @@
-package main
+package settings
 
 import (
 	"errors"
@@ -9,21 +9,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type environment = struct {
-	port      string // ~IMAGE_PREVIEWER_PORT
-	cacheSize string // ~IMAGE_PREVIEWER_CACHE_SIZE
-	minWidth  string // ~IMAGE_PREVIEWER_MIN_WIDTH
-	minHeight string // ~IMAGE_PREVIEWER_MIN_HEIGHT
-	maxWidth  string // ~IMAGE_PREVIEWER_MAX_WIDTH
-	maxHeight string // ~IMAGE_PREVIEWER_MAX_HEIGHT
-}
+type (
+	environment = struct {
+		port      string // ~IMAGE_PREVIEWER_PORT
+		cacheSize string // ~IMAGE_PREVIEWER_CACHE_SIZE
+		minWidth  string // ~IMAGE_PREVIEWER_MIN_WIDTH
+		minHeight string // ~IMAGE_PREVIEWER_MIN_HEIGHT
+		maxWidth  string // ~IMAGE_PREVIEWER_MAX_WIDTH
+		maxHeight string // ~IMAGE_PREVIEWER_MAX_HEIGHT
+	}
 
-type testCase = struct {
-	name     string
-	env      environment
-	expected *Settings
-	err      error
-}
+	testCase = struct {
+		name     string
+		env      environment
+		expected *Settings
+		err      error
+	}
+)
 
 var testCases = []testCase{
 	{

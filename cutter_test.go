@@ -6,16 +6,27 @@ import (
 	"os"
 	"testing"
 
+	internal_settings "github.com/sinuspower/image-previewer/internal/settings"
 	"github.com/stretchr/testify/require"
 )
 
 type (
+	environment = struct {
+		port      string // ~IMAGE_PREVIEWER_PORT
+		cacheSize string // ~IMAGE_PREVIEWER_CACHE_SIZE
+		minWidth  string // ~IMAGE_PREVIEWER_MIN_WIDTH
+		minHeight string // ~IMAGE_PREVIEWER_MIN_HEIGHT
+		maxWidth  string // ~IMAGE_PREVIEWER_MAX_WIDTH
+		maxHeight string // ~IMAGE_PREVIEWER_MAX_HEIGHT
+	}
+
 	expected = struct {
 		width  int
 		height int
 		url    string
 		err    string
 	}
+
 	parsePathTestCase = struct {
 		name     string
 		in       string
@@ -26,7 +37,7 @@ type (
 func TestParsePath(t *testing.T) { //nolint:go-lint // function is too long
 	env := environment{"8080", "5", "50", "50", "2000", "2000"}
 	setEnv(env)
-	settings = new(Settings)
+	settings = new(internal_settings.Settings)
 	err := settings.ParseEnv()
 	require.NoError(t, err)
 
@@ -107,6 +118,15 @@ func TestCut(t *testing.T) {
 			require.Equal(t, tc.expected, actual) //nolint:go-lint
 		})
 	}
+}
+
+func setEnv(values environment) {
+	os.Setenv("IMAGE_PREVIEWER_PORT", values.port)
+	os.Setenv("IMAGE_PREVIEWER_CACHE_SIZE", values.cacheSize)
+	os.Setenv("IMAGE_PREVIEWER_MIN_WIDTH", values.minWidth)
+	os.Setenv("IMAGE_PREVIEWER_MIN_HEIGHT", values.minHeight)
+	os.Setenv("IMAGE_PREVIEWER_MAX_WIDTH", values.maxWidth)
+	os.Setenv("IMAGE_PREVIEWER_MAX_HEIGHT", values.maxHeight)
 }
 
 func readFile(path string) ([]byte, error) {

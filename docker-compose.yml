@@ -1,10 +1,10 @@
 version: "3.3"
 services:
     image-previewer:
-        image: sinuspower/image-previewer:0.6
+        image: sinuspower/image-previewer
         container_name: image-previewer
         volumes:
-            - /var/image-previewer/logs:/root/logs
+            - ${LOGS_DIR}:/root/logs
         ports:
             - "${IMAGE_PREVIEWER_PORT}:${IMAGE_PREVIEWER_PORT}"
         environment:
