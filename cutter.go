@@ -45,6 +45,18 @@ func NewCutter(path string) (ImageCutter, error) {
 }
 
 func (c *Cutter) LoadImage() ([]byte, error) {
+	// load source image from cache
+	image, ok, err := cache.GetFile(c.url)
+	if err != nil {
+		log.Println("[WARN] can not get source image from cache:", err)
+	}
+	if ok {
+		log.Println("[INFO] get source image from cache")
+
+		return image, nil
+	}
+	// --------------------------
+
 	rq, err := http.NewRequestWithContext(context.Background(), "GET", c.url, nil)
 	if err != nil {
 		return nil, err
@@ -61,6 +73,13 @@ func (c *Cutter) LoadImage() ([]byte, error) {
 	bytes, err := ioutil.ReadAll(rs.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	err = cache.PutFile(c.url, bytes)
+	if err != nil {
+		log.Println("[WARN] can put source image into cache:", err)
+	} else {
+		log.Println("[INFO] put source image into cache")
 	}
 
 	return bytes, nil

@@ -51,4 +51,4 @@ jobs:
       script:
         - make lint
         - make test
-        - make build
+        - make build-bin
