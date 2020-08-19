@@ -60,7 +60,7 @@ func (s *Server) ListenAndServe() error {
 		close(idleConnsClosed)
 	}()
 
-	log.Printf("[INFO] listening on port %d; cache size: %d images", s.port, s.cacheSize)
+	log.Printf("[INFO] listening port %d; cache size: %d images", s.port, s.cacheSize)
 	fmt.Fprintln(s.logOutput)
 	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
 		return fmt.Errorf("%s: %w", ErrListenAndServe, err)
@@ -97,10 +97,10 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 	// response from cache
 	image, ok, err := cache.GetFile(path)
 	if err != nil {
-		log.Println("[WARN] can not get cache:", err)
+		log.Println("[WARN] can not get preview cache:", err)
 	}
 	if ok {
-		log.Println("[INFO] get image from cache")
+		log.Println("[INFO] get preview from cache")
 		sendResponse(w, 200, fromHost, image, nil)
 
 		return
@@ -125,9 +125,9 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = cache.PutFile(path, image)
 	if err != nil {
-		log.Println("[WARN] can not write cache:", err)
+		log.Println("[WARN] can put preview into cache:", err)
 	} else {
-		log.Println("[INFO] put image into cache")
+		log.Println("[INFO] put preview into cache")
 	}
 
 	sendResponse(w, 200, fromHost, image, nil)
