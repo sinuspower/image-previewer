@@ -82,6 +82,7 @@ func (s *Server) ListenAndServe() error {
 func fillHandler(w http.ResponseWriter, r *http.Request) {
 	fromHost := r.RemoteAddr
 	path := r.URL.Path
+	rqHeader := r.Header.Clone() // copy original request headers
 	var e error
 
 	log.Printf("[INFO] get request from %s; path: %s", fromHost, path)
@@ -89,28 +90,27 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 	cutter, err := NewCutter(path)
 	if err != nil {
 		e = fmt.Errorf("%s: %w", ErrCreateCutter, err)
-		sendResponse(w, 400, fromHost, nil, e)
+		sendResponse(w, 400, rqHeader, fromHost, nil, e)
 
 		return
 	}
 
-	// response from cache
+	// make response from cache if requested image is in cache
 	image, ok, err := cache.GetFile(path)
 	if err != nil {
-		log.Println("[WARN] can not get preview cache:", err)
+		log.Println("[WARN] can not get preview from cache:", err)
 	}
 	if ok {
 		log.Println("[INFO] get preview from cache")
-		sendResponse(w, 200, fromHost, image, nil)
+		sendResponse(w, 200, rqHeader, fromHost, image, nil)
 
 		return
 	}
-	// --------------------------
 
-	image, err = cutter.LoadImage()
+	image, rsHeader, err := cutter.LoadImage(rqHeader)
 	if err != nil {
 		e = fmt.Errorf("%s: %w", ErrCanNotLoadImage, err)
-		sendResponse(w, 500, fromHost, nil, e)
+		sendResponse(w, 500, rsHeader, fromHost, nil, e)
 
 		return
 	}
@@ -118,22 +118,29 @@ func fillHandler(w http.ResponseWriter, r *http.Request) {
 	image, err = cutter.Cut(image)
 	if err != nil {
 		e = fmt.Errorf("%s: %w", ErrCanNotCutImage, err)
-		sendResponse(w, 500, fromHost, nil, e)
+		sendResponse(w, 500, rsHeader, fromHost, nil, e)
 
 		return
 	}
 
+	// put resized image into cache
 	err = cache.PutFile(path, image)
 	if err != nil {
-		log.Println("[WARN] can put preview into cache:", err)
+		log.Println("[WARN] can not put preview into cache:", err)
 	} else {
 		log.Println("[INFO] put preview into cache")
 	}
 
-	sendResponse(w, 200, fromHost, image, nil)
+	sendResponse(w, 200, rsHeader, fromHost, image, nil)
 }
 
-func sendResponse(w http.ResponseWriter, status int, toHost string, data []byte, err error) {
+func sendResponse(w http.ResponseWriter, status int, header http.Header, toHost string, data []byte, err error) {
+	// copy headers
+	for key, values := range header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
 	w.WriteHeader(status)
 	if err != nil {
 		log.Println("[ERROR]", err)
