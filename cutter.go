@@ -17,7 +17,7 @@ import (
 )
 
 type ImageCutter interface {
-	LoadImage() ([]byte, error)
+	LoadImage(http.Header) ([]byte, http.Header, error)
 	Cut([]byte) ([]byte, error)
 }
 
@@ -44,7 +44,7 @@ func NewCutter(path string) (ImageCutter, error) {
 	}, nil
 }
 
-func (c *Cutter) LoadImage() ([]byte, error) {
+func (c *Cutter) LoadImage(header http.Header) ([]byte, http.Header, error) {
 	// load source image from cache
 	image, ok, err := cache.GetFile(c.url)
 	if err != nil {
@@ -53,36 +53,38 @@ func (c *Cutter) LoadImage() ([]byte, error) {
 	if ok {
 		log.Println("[INFO] get source image from cache")
 
-		return image, nil
+		return image, header, nil
 	}
-	// --------------------------
 
 	rq, err := http.NewRequestWithContext(context.Background(), "GET", c.url, nil)
 	if err != nil {
-		return nil, err
+		return nil, header, err
 	}
+
+	rq.Header = header // write original request headers into request
 
 	log.Println("[INFO] send request to", c.url)
 	rs, err := c.client.Do(rq)
 	if err != nil {
-		return nil, err
+		return nil, header, err
 	}
 	defer rs.Body.Close()
 
 	log.Println("[INFO] get response from", c.url)
 	bytes, err := ioutil.ReadAll(rs.Body)
 	if err != nil {
-		return nil, err
+		return nil, header, err
 	}
 
+	// put source image into cache
 	err = cache.PutFile(c.url, bytes)
 	if err != nil {
-		log.Println("[WARN] can put source image into cache:", err)
+		log.Println("[WARN] can not put source image into cache:", err)
 	} else {
 		log.Println("[INFO] put source image into cache")
 	}
 
-	return bytes, nil
+	return bytes, rs.Header.Clone(), nil
 }
 
 func (c *Cutter) Cut(source []byte) ([]byte, error) {
