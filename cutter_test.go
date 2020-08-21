@@ -65,31 +65,31 @@ func TestParsePath(t *testing.T) { //nolint:go-lint // function is too long
 }
 
 func TestCut(t *testing.T) {
-	source1024x504, err := readFile("testdata/_gopher_original_1024x504.jpg")
+	source1024x504, err := readFile("test/testdata/_gopher_original_1024x504.jpg")
 	require.NoError(t, err)
 
-	exp1024x504, err := readFile("testdata/gopher_1024x504.jpg")
+	exp1024x504, err := readFile("test/testdata/gopher_1024x504.jpg")
 	require.NoError(t, err)
 
-	exp50x50, err := readFile("testdata/gopher_50x50.jpg")
+	exp50x50, err := readFile("test/testdata/gopher_50x50.jpg")
 	require.NoError(t, err)
 
-	exp200x700, err := readFile("testdata/gopher_200x700.jpg")
+	exp200x700, err := readFile("test/testdata/gopher_200x700.jpg")
 	require.NoError(t, err)
 
-	exp256x126, err := readFile("testdata/gopher_256x126.jpg")
+	exp256x126, err := readFile("test/testdata/gopher_256x126.jpg")
 	require.NoError(t, err)
 
-	exp333x666, err := readFile("testdata/gopher_333x666.jpg")
+	exp333x666, err := readFile("test/testdata/gopher_333x666.jpg")
 	require.NoError(t, err)
 
-	exp500x500, err := readFile("testdata/gopher_500x500.jpg")
+	exp500x500, err := readFile("test/testdata/gopher_500x500.jpg")
 	require.NoError(t, err)
 
-	exp1024x252, err := readFile("testdata/gopher_1024x252.jpg")
+	exp1024x252, err := readFile("test/testdata/gopher_1024x252.jpg")
 	require.NoError(t, err)
 
-	exp2000x1000, err := readFile("testdata/gopher_2000x1000.jpg")
+	exp2000x1000, err := readFile("test/testdata/gopher_2000x1000.jpg")
 	require.NoError(t, err)
 
 	type testCase = struct {

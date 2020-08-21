@@ -23,7 +23,7 @@ var imageServerHandleFunc = func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add(key, value)
 		}
 	}
-	f, err := os.Open("testdata/_gopher_original_1024x504.jpg")
+	f, err := os.Open("test/testdata/_gopher_original_1024x504.jpg")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
@@ -58,24 +58,24 @@ func TestGetPreviews(t *testing.T) {
 	defer previewServer.Close()
 
 	var testCases = []struct { //nolint:go-lint
-		name       string
-		urlPattern string
-		filepath   string
+		name        string
+		urlTemplate string
+		filepath    string
 	}{
-		{"50x50", "%s/fill/50/50/%s/images/source.jpg", "testdata/gopher_50x50.jpg"},
-		{"200x700", "%s/fill/200/700/%s/images/source.jpg", "testdata/gopher_200x700.jpg"},
-		{"256x126", "%s/fill/256/126/%s/images/source.jpg", "testdata/gopher_256x126.jpg"},
-		{"333x666", "%s/fill/333/666/%s/images/source.jpg", "testdata/gopher_333x666.jpg"},
-		{"500x500", "%s/fill/500/500/%s/images/source.jpg", "testdata/gopher_500x500.jpg"},
-		{"1024x252", "%s/fill/1024/252/%s/images/source.jpg", "testdata/gopher_1024x252.jpg"},
-		{"1024x504", "%s/fill/1024/504/%s/images/source.jpg", "testdata/gopher_1024x504.jpg"},
-		{"2000x1000", "%s/fill/2000/1000/%s/images/source.jpg", "testdata/gopher_2000x1000.jpg"},
+		{"50x50", "%s/fill/50/50/%s/images/source.jpg", "test/testdata/gopher_50x50.jpg"},
+		{"200x700", "%s/fill/200/700/%s/images/source.jpg", "test/testdata/gopher_200x700.jpg"},
+		{"256x126", "%s/fill/256/126/%s/images/source.jpg", "test/testdata/gopher_256x126.jpg"},
+		{"333x666", "%s/fill/333/666/%s/images/source.jpg", "test/testdata/gopher_333x666.jpg"},
+		{"500x500", "%s/fill/500/500/%s/images/source.jpg", "test/testdata/gopher_500x500.jpg"},
+		{"1024x252", "%s/fill/1024/252/%s/images/source.jpg", "test/testdata/gopher_1024x252.jpg"},
+		{"1024x504", "%s/fill/1024/504/%s/images/source.jpg", "test/testdata/gopher_1024x504.jpg"},
+		{"2000x1000", "%s/fill/2000/1000/%s/images/source.jpg", "test/testdata/gopher_2000x1000.jpg"},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			url := fmt.Sprintf(tc.urlPattern, previewServer.URL, imageServer.URL) //nolint:go-lint
-			testGetPreview(t, url, tc.filepath)                                   //nolint:go-lint
+			url := fmt.Sprintf(tc.urlTemplate, previewServer.URL, imageServer.URL) //nolint:go-lint
+			testGetPreview(t, url, tc.filepath)                                    //nolint:go-lint
 		})
 	}
 }
