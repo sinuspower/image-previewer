@@ -8,13 +8,19 @@ build-bin:
 build-docker:
 	docker build -t sinuspower/image-previewer .
 
-run: build-docker
+build-nginx:
+	docker build -t nginx/image-server ./test/integration
+
+run: # build-docker
 	source docker-compose.env && \
 	docker-compose up -d
 
 run-bin:
 	source run-bin.env && \
 	./bin/image-previewer
+
+run-nginx:
+	IMAGE_SERVER_PORT=8082 docker-compose -f ./test/integration/docker-compose.yml up -d 
 
 down:
 	source docker-compose.env && \
@@ -29,9 +35,9 @@ stop:
 	docker-compose stop image-previewer
 
 test:
-	go test -race ./...
+	go test -v -race ./...
 
 lint:
 	golangci-lint run ./...
 
-.PHONY: build
+.PHONY: build test

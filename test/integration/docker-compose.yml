@@ -1,0 +1,7 @@
+version: "3.3"
+services:
+    nginx-image-server:
+        image: nginx/image-server
+        container_name: nginx-image-server
+        ports:
+            - "${IMAGE_SERVER_PORT}:80"
